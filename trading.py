@@ -46,7 +46,6 @@ class tradeFXCM:
             }
         )
 
-
     def IchimokuCalc(self):
         self.ichimoku.append(
             {

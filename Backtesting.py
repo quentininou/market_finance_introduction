@@ -20,8 +20,8 @@ class BacktestingFXCM:
         self.data = con.get_candles(instrument, period=frequency, start=date_time_start, end=date_time_end)
         utils_columns = ['askclose', 'bidclose','askhigh', 'asklow', 'askopen']
         self.data = self.data[utils_columns]
-        self.EMAv = initEMAv(self.data)
-        #self.ichimoku = initIchimoku(self.data)
+        #self.EMAv = initEMAv(self.data)
+        self.ichimoku = initIchimoku(self.data)
         self.result = pd.DataFrame(columns=['position', 'position_test'])
 
 
@@ -39,9 +39,13 @@ class BacktestingFXCM:
 
 
     def calculPositionIchimoku(self):
-        self.result['position'] = np.where((self.data['askclose'] > self.ichimoku['senkouA']) & (self.data['askclose'] > self.ichimoku['senkouB'])
-                                           & (self.ichimoku['chikou'] >self.data['askclose'] &
-                                              (self.ichimoku['tenkan'] > self.ichimoku['kinju'])), 1,0)
+        print(self.ichimoku.tail())
+        print(self.data.tail())
+        self.result['position'] = np.where(
+            (self.data['askclose'] > self.ichimoku['senkouA']) &
+            (self.data['askclose'] > self.ichimoku['senkouB']) &
+            (self.ichimoku['chikou'] > self.data['askclose']) &
+            (self.ichimoku['tenkan'] > self.ichimoku['kijun']), 1,0)
         self.result['signal'] = self.result['position'].diff()
         self.result['difference_pips'] = (self.data['askclose'].values - self.data['askopen'].values) * 100
 
@@ -64,7 +68,7 @@ class BacktestingFXCM:
 
     def plotting(self):
         fig = plt.figure(figsize=(42,32))
-        ax1 = fig.add_subplot(111,  ylabel='GBP/JPY Price')
+        ax1 = fig.add_subplot(111,  ylabel=self.instrument + 'Price')
         dataplot = self.data.merge(self.result, left_on=self.result.index, right_index=True).reset_index()
         dataplot = dataplot.merge(self.EMAv, on='date')
         #print(dataplot.head(100))
@@ -81,3 +85,25 @@ class BacktestingFXCM:
         ax2 = ax1.twinx()
         ax2.set_ylabel('Profit $')
         ax2.plot(dataplot['total'], color='m', lw=3)
+
+
+    def plottingICHI(self):
+        fig = plt.figure(figsize=(42,32))
+        ax1 = fig.add_subplot(111,  ylabel=self.instrument + 'Price')
+        dataplot = self.data.merge(self.result, left_on=self.result.index, right_index=True).reset_index()
+        dataplot = dataplot.merge(self.ichimoku, on='date')
+        dataplot['askclose'].plot(ax=ax1, color='r', lw=2, label='askclose')
+        dataplot[['kijun','tenkan', 'chikou']].plot(ax=ax1, lw=1)
+
+        ax1.fill_between(dataplot['senkouA'], dataplot['senkouB'])
+        ax1.plot(dataplot.loc[dataplot.position == 1.0].index,
+                 dataplot.kijun[dataplot.position == 1.0],
+                 'D', markersize=10, color='k' )
+        ax1.plot(dataplot.loc[dataplot.position == -1.0].index,
+                 dataplot.kijun[dataplot.position == -1.0],
+                 'X', markersize=10, color='m')
+
+        ax2 = ax1.twinx()
+        ax2.set_ylabel('Profit $')
+        ax2.plot(dataplot['total'], color='m', lw=3)
+

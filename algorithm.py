@@ -1,9 +1,5 @@
-import fxcmpy
-import datetime
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from pyti.exponential_moving_average import exponential_moving_average as ema
 
 
 def calculPeriodEMAv(i, val, tabEMAv, data, periodValue):
@@ -21,6 +17,7 @@ def initEMAv(data):
     p_20 = []
     p_50 = []
     periodEMAv = ['p_5', 'p_20', 'p_50']
+    ## pour D1 & H1 : 12,20,50
     for val in data['askclose']:
         p_5.append(calculPeriodEMAv(i, val, p_5, data['askclose'], 12))
         p_20.append(calculPeriodEMAv(i, val, p_20, data['askclose'], 20))
@@ -72,27 +69,26 @@ def initIchimoku(data):
     senkou_spanA = []
     senkou_spanB = []
     kumo = []
+    for z in range(26):
+        senkou_spanB.append(None)
     for val in data['askclose']:
         tenkan_sen.append(calculsen(i, data, 9))
         kijun_sen.append(calculsen(i, data, 26))
         chikou_span.append(calculspan(i, data, 26, 'Chikou', tenkan_sen, kijun_sen))
         senkou_spanA.append(calculspan(i, data, 26, 'SenkouA', tenkan_sen, kijun_sen))
-        ok = calculspan(i, data, 52, 'SenkouB', tenkan_sen, kijun_sen)
-        if senkou_spanB and senkou_spanB[-1] == None and ok != None:
-            for z in range(26):
-                senkou_spanB.append(None)
-            senkou_spanB.append(ok)
-        else:
-            senkou_spanB.append(ok)
+        senkou_spanB.append(calculspan(i, data, 52, 'SenkouB', tenkan_sen, kijun_sen))
         i += 1
-    print(senkou_spanB[:30])
-    print(senkou_spanA[:30])
+    print(len(chikou_span))
+    print(len(senkou_spanB))
+    print(len(senkou_spanA))
+    senkou_spanB = senkou_spanB[:len(senkou_spanB)-26]
     ichimoku = pd.DataFrame()
     ichimoku['tenkan'] = tenkan_sen
     ichimoku['kijun'] = kijun_sen
     ichimoku['chikou'] = chikou_span
     ichimoku['senkouA'] = senkou_spanA
     ichimoku['senkouB'] = senkou_spanB
+    ichimoku = ichimoku.set_index(data.index)
     return ichimoku
 
 
@@ -133,7 +129,8 @@ def decisionEMAv(data, EMAv, isTrade, con, instrument):
     # ENTRY LOGIC
     # buy if p5 go upper than p20
     if EMAv['p_5'][-1] > EMAv['p_20'][-1]:
-        # P20 and p5 are upper p50 and last price upper p50
+        # P20 and p5 are upper p50
+        # and last price upper p50
         if EMAv['p_20'][-1] > EMAv['p_50'][-1] and data['askclose'][-1] > EMAv['p_50'][-1]:
             ### je achete
             if isTrade == False:
