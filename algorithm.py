@@ -78,9 +78,6 @@ def initIchimoku(data):
         senkou_spanA.append(calculspan(i, data, 26, 'SenkouA', tenkan_sen, kijun_sen))
         senkou_spanB.append(calculspan(i, data, 52, 'SenkouB', tenkan_sen, kijun_sen))
         i += 1
-    print(len(chikou_span))
-    print(len(senkou_spanB))
-    print(len(senkou_spanA))
     senkou_spanB = senkou_spanB[:len(senkou_spanB)-26]
     ichimoku = pd.DataFrame()
     ichimoku['tenkan'] = tenkan_sen
@@ -93,34 +90,35 @@ def initIchimoku(data):
 
 
 
-def decisionIchimoku(data, ichimoku):
+def decisionIchimoku(data, ichimokuisTrade, isTrade, con, instrument):
     # nuage  = Kumo : nuage enter senkouA et SenkouB
     # haussier fort : prix au dessus du nuage, tenkan > kijun, roisement au dessus du nuage, chikou au dessus de prix
 
     if data['askclose'][-1] > ichimoku['senkouA'][-1] and data['askclose'][-1] > ichimoku['senkouB'][-1]:
         if ichimoku['chikou'][-1] > data['askclose'][-1]:
             if ichimoku['tekan'][-2] < ichimoku['kijun'][-2] and ichimoku['tekan'][-1] > ichimoku['kijun'][-1]:
-                if ichimoku['tenkan'][-1] > ichimoku['senkouA'][-1] and ichimoku['tenkan'][-1] > ichimoku['senkouB'][-1]:
+                if isTrade == False:
+                    con.create_market_buy_order(instrument, 10)
+                    return True
+
+            #if ichimoku['tenkan'][-1] > ichimoku['senkouA'][-1] and ichimoku['tenkan'][-1] > ichimoku['senkouB'][-1]:
                     # haussier fort au dessus du nuage
-                    print("la")
-                if ichimoku['tenkan'][-1] < ichimoku['senkouA'][-1] and ichimoku['tenkan'][-1] < ichimoku['senkouB'][-1]:
+                #if ichimoku['tenkan'][-1] < ichimoku['senkouA'][-1] and ichimoku['tenkan'][-1] < ichimoku['senkouB'][-1]:
                     # haussier faible au dessous du nuage
-                    print("la")
-                else:
-                    print("la")
+                #else:
                     # haussier moyen dans le nuage
 
     if data['askclose'][-1] < ichimoku['senkouA'][-1] and data['askclose'][-1] < ichimoku['senkouB'][-1]:
         if ichimoku['chikou'][-1] < data['askclose'][-1]:
             if ichimoku['tekan'][-2] > ichimoku['kijun'][-2] and ichimoku['tekan'][-1] < ichimoku['kijun'][-1]:
-                if ichimoku['kijun'][-1] < ichimoku['senkouA'][-1] and ichimoku['kijun'][-1] < ichimoku['senkouB'][-1]:
+                if isTrade == True:
+                    con.create_market_sell_order(instrument, 10)
+                    return False
+                #if ichimoku['kijun'][-1] < ichimoku['senkouA'][-1] and ichimoku['kijun'][-1] < ichimoku['senkouB'][-1]:
                     # baissier fort au dessus du nuage
-                    print("la")
-                if ichimoku['kijun'][-1] > ichimoku['senkouA'][-1] and ichimoku['kijun'][-1] > ichimoku['senkouB'][-1]:
+                #if ichimoku['kijun'][-1] > ichimoku['senkouA'][-1] and ichimoku['kijun'][-1] > ichimoku['senkouB'][-1]:
                     # baissier faible au dessous du nuage
-                    print("la")
-                else:
-                    print("la")
+                #else:
                     # baissier moyen dans le nuage
 
 
@@ -134,7 +132,6 @@ def decisionEMAv(data, EMAv, isTrade, con, instrument):
         if EMAv['p_20'][-1] > EMAv['p_50'][-1] and data['askclose'][-1] > EMAv['p_50'][-1]:
             ### je achete
             if isTrade == False:
-                # TODO if exsting open trade don't open !!!!!!!!
                 con.create_market_buy_order(instrument, 10)
                 return True
 
@@ -144,8 +141,8 @@ def decisionEMAv(data, EMAv, isTrade, con, instrument):
         # P20 and p5 are under p50 and last price under p50
         if EMAv['p_20'][-1] < EMAv['p_50'][-1] and data['askclose'][-1] < EMAv['p_50'][-1]:
             ### je vend
-            # TODO if open trade exit other don't do anithing !!!!!!!!
-            con.create_market_sell_order(instrument, 10)
-            return False
+            if isTrade == True:
+                con.create_market_sell_order(instrument, 10)
+                return False
 
     return isTrade

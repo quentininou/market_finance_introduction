@@ -8,13 +8,14 @@ from algorithm import *
 
 
 class tradeFXCM:
-    def __init__(self, instrument, frequency, con):
+    def __init__(self, instrument, frequency, con, type_algo='EMAv'):
         # smallest change value
         self.pip = .0879
         # basic number of lot order
         self.lot_size = 10
         self.instrument = instrument
         self.frequency = frequency
+        self.typeAlgo = type_algo
         self.data = con.get_candles(instrument, period=frequency, number=1000)
         utils_columns = ['askclose', 'bidclose','askhigh', 'asklow', 'askopen']
         self.data = self.data[utils_columns]
@@ -79,7 +80,12 @@ class tradeFXCM:
         self.ExpMovingAvCalc()
         #self.IchimokuCalc()
 
-        # decision emav
-        self.isTrade = decisionEMAv(self.data, self.EMAv, self.isTrade, con, self.instrument)
+        if self.typeAlgo == 'EMAv':
+            # decision emav
+            self.isTrade = decisionEMAv(self.data, self.EMAv, self.isTrade, con, self.instrument)
+        elif self.typeAlgo == 'Ichimoku':
+            # decision ichimoku
+            self.isTrade = decisionIchimoku(self.data, self.EMAv, self.isTrade, con, self.instrument)
+
 
 
