@@ -68,7 +68,6 @@ class BacktestingFXCM:
         returns = 0
         signals_sell = []
         signals_buy = []
-        print("calcul profit")
         res = 0
         for index, row in self.result.iterrows():
             if row['position_buy'] == 1:
